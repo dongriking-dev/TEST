@@ -3,393 +3,581 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>リアルタイムお知らせ・ブログ</title>
+    <title>プライベートログ - Personal Notebook</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for icons -->
+    <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.25s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 h-full flex flex-col antialiased">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex flex-col antialiased transition-colors duration-200">
 
     <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+    <header class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm">
-                    <i class="fa-solid fa-bullhorn"></i>
+                <div class="bg-gradient-to-tr from-sky-500 to-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm">
+                    <i class="fa-solid fa-journal-whills"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg text-slate-900 leading-tight">コミュニティ・ボード</h1>
-                    <p class="text-xs text-slate-500">リアルタイムでお知らせを共有</p>
+                    <h1 class="font-bold text-lg text-slate-900 dark:text-white leading-tight">パーソナルログ</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <i class="fa-solid fa-lock text-emerald-500 text-[10px]"></i> 完全ローカル保存
+                    </p>
                 </div>
             </div>
+
+            <!-- Controls (Theme, Backup, New Post) -->
             <div class="flex items-center space-x-2">
-                <span id="connection-status" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 transition-all duration-300">
-                    <span class="w-2 h-2 mr-1.5 bg-amber-500 rounded-full animate-pulse"></span> 接続中...
-                </span>
-                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-sm transition transform active:scale-95 flex items-center space-x-2">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                    <span>新規投稿</span>
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition" title="ダークモード切替">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <!-- Data Backup Dropdown Trigger -->
+                <div class="relative inline-block text-left">
+                    <button onclick="toggleBackupMenu()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition" title="バックアップ・データ管理">
+                        <i class="fa-solid fa-database"></i>
+                    </button>
+                    <!-- Backup Dropdown Menu -->
+                    <div id="backup-menu" class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50 fade-in">
+                        <button onclick="exportData()" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center space-x-2">
+                            <i class="fa-solid fa-download text-sky-500 w-4"></i>
+                            <span>JSON書き出し (バックアップ)</span>
+                        </button>
+                        <button onclick="document.getElementById('import-file-input').click()" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center space-x-2">
+                            <i class="fa-solid fa-upload text-emerald-500 w-4"></i>
+                            <span>JSON読み込み (復元)</span>
+                        </button>
+                        <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="importData(event)">
+                    </div>
+                </div>
+
+                <!-- New Post Button -->
+                <button onclick="openFormModal()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition active:scale-95 flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden sm:inline">新規記録</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
-        <!-- Search & Filter bar -->
-        <div class="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div class="relative w-full sm:w-72">
-                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                    <i class="fa-solid fa-search text-sm"></i>
-                </span>
-                <input type="text" id="search-input" placeholder="記事を検索..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-2xs">
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-6">
+        <!-- Search, Filter & Stats Bar -->
+        <div class="mb-6 space-y-3">
+            <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <!-- Search Input -->
+                <div class="relative w-full sm:w-80">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                    </span>
+                    <input type="text" id="search-input" placeholder="タイトルや本文で検索..." oninput="filterPosts()" class="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800 dark:text-slate-100 shadow-2xs transition">
+                </div>
+
+                <!-- Post Stats Counter -->
+                <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center space-x-2 self-end sm:self-center">
+                    <span class="px-3 py-1 bg-slate-200/60 dark:bg-slate-800 rounded-full font-medium">
+                        全 <span id="total-count" class="text-sky-600 dark:text-sky-400 font-bold">0</span> 件の記録
+                    </span>
+                </div>
             </div>
-            <div class="text-xs text-slate-500 flex items-center self-end sm:self-center">
-                <i class="fa-solid fa-circle-info mr-1.5 text-indigo-500"></i>変更は自動で全ユーザーに反映されます
+
+            <!-- Category Filter Buttons -->
+            <div id="category-filter-list" class="flex flex-wrap gap-2 pt-1">
+                <!-- Dynamic categories populated via JS -->
             </div>
         </div>
 
-        <!-- Post List Container -->
+        <!-- Post Cards List Container -->
         <div id="posts-container" class="space-y-4">
-            <!-- Loading Skeleton State -->
-            <div id="loading-skeleton" class="space-y-4">
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 animate-pulse shadow-2xs">
-                    <div class="h-5 bg-slate-200 rounded w-1/3 mb-4"></div>
-                    <div class="space-y-2">
-                        <div class="h-4 bg-slate-100 rounded w-full"></div>
-                        <div class="h-4 bg-slate-100 rounded w-4/5"></div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 animate-pulse shadow-2xs">
-                    <div class="h-5 bg-slate-200 rounded w-1/4 mb-4"></div>
-                    <div class="space-y-2">
-                        <div class="h-4 bg-slate-100 rounded w-full"></div>
-                        <div class="h-4 bg-slate-100 rounded w-2/3"></div>
-                    </div>
-                </div>
-            </div>
+            <!-- Rendered Dynamically -->
+        </div>
 
-            <!-- Empty State (Hidden by default) -->
-            <div id="empty-state" class="hidden text-center py-16 bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs">
-                <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                    <i class="fa-solid fa-folder-open"></i>
-                </div>
-                <h3 class="text-base font-semibold text-slate-900">記事がまだありません</h3>
-                <p class="text-sm text-slate-500 mt-1 mb-6">最初の投稿を作成して、リアルタイム共有を試してみましょう！</p>
-                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-sm transition">
-                    今すぐ投稿する
-                </button>
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-2xs">
+            <div class="w-16 h-16 bg-sky-50 dark:bg-slate-700 text-sky-500 dark:text-sky-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-pen-nib"></i>
             </div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">記録が見つかりません</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">まだノートが作成されていないか、検索条件に一致するアイテムがありません。</p>
+            <button onclick="openFormModal()" class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition shadow-sm">
+                新しい記録を追加する
+            </button>
         </div>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-        &copy; 2026 リアルタイムお知らせサイト. All rights reserved.
+    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-4 text-center text-xs text-slate-400">
+        Personal Notebook & Log &bull; LocalStorage Active
     </footer>
 
-    <!-- Post Modal / Form -->
-    <div id="post-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-        <div id="modal-content" class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 transform scale-95 transition-transform duration-300 border border-slate-100">
-            <div class="flex items-center justify-between mb-5">
-                <h3 class="font-bold text-lg text-slate-900 flex items-center">
-                    <i class="fa-solid fa-pen-nib text-indigo-600 mr-2"></i> 新規記事の作成
+    <!-- Create/Edit Form Modal -->
+    <div id="form-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div id="form-modal-content" class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-200">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-700/60 pb-3">
+                <h3 id="modal-heading" class="font-bold text-lg text-slate-900 dark:text-white flex items-center">
+                    <i class="fa-solid fa-pen-to-square text-sky-500 mr-2"></i> 新規記録の作成
                 </h3>
-                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+                <button onclick="closeFormModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            
-            <form id="post-form" onsubmit="handlePostSubmit(event)" class="space-y-4">
+
+            <form id="note-form" onsubmit="saveNote(event)" class="space-y-4">
+                <input type="hidden" id="note-id">
+                
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">お名前 / ニックネーム</label>
-                    <input type="text" id="author-input" required placeholder="例: 管理人" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">タイトル</label>
+                    <input type="text" id="title-input" required placeholder="タイトルを入力..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
                 </div>
+
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">タイトル</label>
-                    <input type="text" id="title-input" required placeholder="例: サイトをリニューアルしました！" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">カテゴリ</label>
+                    <select id="category-input" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
+                        <option value="メモ">📝 メモ</option>
+                        <option value="日記">📖 日記</option>
+                        <option value="開発ログ">💻 開発ログ</option>
+                        <option value="アイデア">💡 アイデア</option>
+                        <option value="タスク">✅ タスク</option>
+                    </select>
                 </div>
+
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">本文</label>
-                    <textarea id="content-input" required rows="5" placeholder="お知らせの詳細やブログの内容を入力してください..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition resize-none"></textarea>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">本文</label>
+                    <textarea id="content-input" required rows="6" placeholder="詳細を入力してください... (改行は自動保持されます)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition resize-none leading-relaxed"></textarea>
                 </div>
+
                 <div class="flex items-center justify-end space-x-3 pt-2">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
+                    <button type="button" onclick="closeFormModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
                         キャンセル
                     </button>
-                    <button type="submit" id="submit-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center space-x-2">
-                        <i class="fa-solid fa-paper-plane"></i>
-                        <span>投稿する</span>
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center space-x-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>保存する</span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Custom Notification / Message Box Modal -->
-    <div id="message-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
-        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
-            <div id="msg-icon" class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3 text-xl">
+    <!-- Notification / Toast Alert Modal -->
+    <div id="toast-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6 text-center border border-slate-200 dark:border-slate-700">
+            <div id="toast-icon" class="w-12 h-12 rounded-full bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center mx-auto mb-3 text-xl">
                 <i class="fa-solid fa-check"></i>
             </div>
-            <h4 id="msg-title" class="font-bold text-slate-900 text-base mb-1">通知</h4>
-            <p id="msg-text" class="text-sm text-slate-500 mb-5">メッセージ内容</p>
-            <button onclick="closeMessageModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-medium transition">
+            <h4 id="toast-title" class="font-bold text-slate-900 dark:text-white text-base mb-1">お知らせ</h4>
+            <p id="toast-message" class="text-sm text-slate-500 dark:text-slate-400 mb-5">処理が完了しました。</p>
+            <button onclick="closeToast()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-2.5 rounded-xl text-sm font-medium transition shadow-sm">
                 OK
             </button>
         </div>
     </div>
 
-    <!-- Firebase Script Loader & App Logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- Delete Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6 text-center border border-slate-200 dark:border-slate-700">
+            <div class="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h4 class="font-bold text-slate-900 dark:text-white text-base mb-1">記録を削除しますか？</h4>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">この操作は取り消せません。</p>
+            <div class="flex space-x-3">
+                <button onclick="closeConfirmModal()" class="w-1/2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                    キャンセル
+                </button>
+                <button id="confirm-delete-btn" class="w-1/2 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-sm font-medium transition shadow-sm">
+                    削除する
+                </button>
+            </div>
+        </div>
+    </div>
 
-        // Firebase Configuration & Initialization
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'realtime-blog-app-default';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+    <!-- Application Script -->
+    <script>
+        const STORAGE_KEY = 'personal_notebook_entries_v1';
+        const THEME_KEY = 'personal_notebook_theme';
+        const CATEGORIES = ['すべて', 'メモ', '日記', '開発ログ', 'アイデア', 'タスク'];
 
-        let app, db, auth, userId = null;
-        let allPosts = [];
+        let posts = [];
+        let selectedCategory = 'すべて';
+        let deleteTargetId = null;
 
-        // Custom UI Modal Helper (No alert/confirm)
-        window.showToast = function(title, text, isError = false) {
-            document.getElementById('msg-title').innerText = title;
-            document.getElementById('msg-text').innerText = text;
-            const iconEl = document.getElementById('msg-icon');
-            if (isError) {
-                iconEl.className = "w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3 text-xl";
-                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+        // Color badge dictionary for categories
+        const categoryColors = {
+            'メモ': 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+            '日記': 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
+            '開発ログ': 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
+            'アイデア': 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+            'タスク': 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
+        };
+
+        // On Document Load
+        window.onload = function() {
+            initTheme();
+            loadPostsFromStorage();
+            renderCategoryFilters();
+            renderPosts();
+        };
+
+        // Theme Initialization & Toggle
+        function initTheme() {
+            const savedTheme = localStorage.getItem(THEME_KEY);
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = 'fa-solid fa-sun';
             } else {
-                iconEl.className = "w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3 text-xl";
-                iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').className = 'fa-solid fa-moon';
             }
-            const modal = document.getElementById('message-modal');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-        };
+        }
 
-        window.closeMessageModal = function() {
-            document.getElementById('message-modal').classList.add('opacity-0', 'pointer-events-none');
-        };
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
 
-        // Modal Controls
-        window.openModal = function() {
-            const modal = document.getElementById('post-modal');
-            const content = document.getElementById('modal-content');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            content.classList.remove('scale-95');
-            content.classList.add('scale-100');
-            document.getElementById('title-input').focus();
-        };
-
-        window.closeModal = function() {
-            const modal = document.getElementById('post-modal');
-            const content = document.getElementById('modal-content');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            content.classList.remove('scale-100');
-            content.classList.add('scale-95');
-            document.getElementById('post-form').reset();
-        };
-
-        // Initialize Firebase
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
-            if (token) {
-                signInWithCustomToken(auth, token).catch(() => signInAnonymously(auth));
-            } else {
-                signInAnonymously(auth);
-            }
-
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    updateConnectionStatus(true);
-                    initFirestoreListener();
-                } else {
-                    userId = null;
-                    updateConnectionStatus(false);
+        // Load Posts from LocalStorage
+        function loadPostsFromStorage() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    posts = JSON.parse(saved);
+                } catch(e) {
+                    posts = [];
                 }
-            });
-        } catch (e) {
-            console.error("Firebase init error:", e);
-            updateConnectionStatus(false);
-            showToast("接続エラー", "Firebaseの初期化に失敗しました。", true);
-        }
-
-        function updateConnectionStatus(isConnected) {
-            const badge = document.getElementById('connection-status');
-            if (isConnected) {
-                badge.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 transition-all duration-300";
-                badge.innerHTML = '<span class="w-2 h-2 mr-1.5 bg-emerald-500 rounded-full"></span> リアルタイム接続中';
             } else {
-                badge.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-800 transition-all duration-300";
-                badge.innerHTML = '<span class="w-2 h-2 mr-1.5 bg-rose-500 rounded-full"></span> オフライン';
+                // Pre-populate with a welcome sample entry if first time
+                posts = [{
+                    id: Date.now().toString(),
+                    title: 'ようこそ！パーソナルログへ',
+                    category: 'メモ',
+                    content: 'このアプリケーションは外部データベースを使わず、すべてお使いのブラウザ（LocalStorage）に保存されます。\n\n・右上の「新規記録」ボタンからアイテムを追加できます。\n・右上のデータベースアイコンからデータのエクスポート（バックアップ）やインポートが可能です。\n・タイトルや本文、カテゴリで瞬時に検索・絞り込みができます。',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                }];
+                savePostsToStorage();
             }
         }
 
-        // Firestore Real-time Listener (Rule 1 & Rule 3 compliant)
-        function initFirestoreListener() {
-            if (!db) return;
-            const postsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'posts');
-            
-            onSnapshot(query(postsCollection), (snapshot) => {
-                allPosts = [];
-                snapshot.forEach((docSnap) => {
-                    allPosts.push({ id: docSnap.id, ...docSnap.data() });
-                });
+        // Save Posts to LocalStorage
+        function savePostsToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+        }
 
-                // Sort client-side by timestamp descending (newest first)
-                allPosts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                
-                renderPosts(allPosts);
-            }, (error) => {
-                console.error("Firestore snapshot error:", error);
-                showToast("同期エラー", "データの取得中にエラーが発生しました。", true);
+        // Render Category Filter Buttons
+        function renderCategoryFilters() {
+            const filterContainer = document.getElementById('category-filter-list');
+            filterContainer.innerHTML = '';
+
+            CATEGORIES.forEach(cat => {
+                const btn = document.createElement('button');
+                const isSelected = cat === selectedCategory;
+                btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer ${
+                    isSelected 
+                        ? 'bg-sky-600 text-white shadow-xs' 
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                }`;
+                btn.innerText = cat;
+                btn.onclick = () => {
+                    selectedCategory = cat;
+                    renderCategoryFilters();
+                    renderPosts();
+                };
+                filterContainer.appendChild(btn);
             });
         }
 
-        // Render Posts to DOM
-        function renderPosts(postsToRender) {
+        // Render Posts
+        function renderPosts() {
             const container = document.getElementById('posts-container');
-            const skeleton = document.getElementById('loading-skeleton');
             const emptyState = document.getElementById('empty-state');
+            const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
 
-            if (skeleton) skeleton.remove();
+            // Filter logic
+            let filtered = posts.filter(post => {
+                const matchesCategory = (selectedCategory === 'すべて' || post.category === selectedCategory);
+                const matchesSearch = post.title.toLowerCase().includes(searchQuery) || 
+                                      post.content.toLowerCase().includes(searchQuery);
+                return matchesCategory && matchesSearch;
+            });
 
-            // Filter if search query exists
-            const searchQuery = document.getElementById('search-input').value.toLowerCase();
-            const filtered = postsToRender.filter(p => 
-                (p.title && p.title.toLowerCase().includes(searchQuery)) || 
-                (p.content && p.content.toLowerCase().includes(searchQuery)) ||
-                (p.author && p.author.toLowerCase().includes(searchQuery))
-            );
+            // Sort descending by timestamp
+            filtered.sort((a, b) => b.createdAt - a.createdAt);
+
+            document.getElementById('total-count').innerText = filtered.length;
 
             if (filtered.length === 0) {
+                container.innerHTML = '';
                 emptyState.classList.remove('hidden');
-                // Keep the empty state element, clear other post cards
-                const existingCards = container.querySelectorAll('.post-card');
-                existingCards.forEach(c => c.remove());
                 return;
             } else {
                 emptyState.classList.add('hidden');
             }
 
-            // Remove previous rendered cards
-            const existingCards = container.querySelectorAll('.post-card');
-            existingCards.forEach(c => c.remove());
+            container.innerHTML = '';
 
             filtered.forEach(post => {
                 const card = document.createElement('div');
-                card.className = "post-card bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition duration-200 flex flex-col justify-between";
-                
-                const dateStr = post.createdAt ? new Date(post.createdAt).toLocaleString('ja-JP', {
+                card.className = "fade-in bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs hover:shadow-md transition duration-200 flex flex-col justify-between";
+
+                const createdDate = new Date(post.createdAt).toLocaleString('ja-JP', {
                     year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-                }) : 'たった今';
+                });
+
+                const isEdited = post.updatedAt && post.updatedAt !== post.createdAt;
+                const categoryClass = categoryColors[post.category] || 'bg-slate-100 text-slate-700';
 
                 card.innerHTML = `
                     <div>
                         <div class="flex items-center justify-between mb-3">
                             <div class="flex items-center space-x-2">
-                                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
-                                    ${escapeHtml(post.author ? post.author.charAt(0) : '名')}
-                                </div>
-                                <div>
-                                    <span class="text-xs font-semibold text-slate-800">${escapeHtml(post.author || '名無しさん')}</span>
-                                    <span class="text-slate-300 mx-1.5">•</span>
-                                    <span class="text-xs text-slate-400">${dateStr}</span>
-                                </div>
+                                <span class="px-2.5 py-1 rounded-lg text-xs font-medium ${categoryClass}">
+                                    ${escapeHtml(post.category)}
+                                </span>
+                                <span class="text-xs text-slate-400 dark:text-slate-500">
+                                    <i class="fa-regular fa-clock mr-1"></i>${createdDate} ${isEdited ? '(編集済み)' : ''}
+                                </span>
                             </div>
-                            <button onclick="deletePost('${post.id}')" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition text-sm" title="削除">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
+                            <!-- Action Buttons -->
+                            <div class="flex items-center space-x-1">
+                                <button onclick="openEditModal('${post.id}')" class="p-1.5 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition" title="編集">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="confirmDelete('${post.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition" title="削除">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
                         </div>
-                        <h2 class="text-base font-bold text-slate-900 mb-2">${escapeHtml(post.title)}</h2>
-                        <p class="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(post.content)}</p>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">${escapeHtml(post.title)}</h3>
+                        <p class="text-slate-600 dark:text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(post.content)}</p>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        // Handle Form Submission (Create Post)
-        window.handlePostSubmit = async function(event) {
+        // Search trigger
+        function filterPosts() {
+            renderPosts();
+        }
+
+        // Form Modal Operations
+        function openFormModal() {
+            document.getElementById('note-id').value = '';
+            document.getElementById('note-form').reset();
+            document.getElementById('modal-heading').innerHTML = '<i class="fa-solid fa-pen-to-square text-sky-500 mr-2"></i> 新規記録の作成';
+            
+            const modal = document.getElementById('form-modal');
+            const content = document.getElementById('form-modal-content');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        }
+
+        function openEditModal(id) {
+            const post = posts.find(p => p.id === id);
+            if (!post) return;
+
+            document.getElementById('note-id').value = post.id;
+            document.getElementById('title-input').value = post.title;
+            document.getElementById('category-input').value = post.category;
+            document.getElementById('content-input').value = post.content;
+
+            document.getElementById('modal-heading').innerHTML = '<i class="fa-solid fa-pen-to-square text-sky-500 mr-2"></i> 記録の編集';
+
+            const modal = document.getElementById('form-modal');
+            const content = document.getElementById('form-modal-content');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        }
+
+        function closeFormModal() {
+            const modal = document.getElementById('form-modal');
+            const content = document.getElementById('form-modal-content');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+        }
+
+        // Save/Update Note
+        function saveNote(event) {
             event.preventDefault();
-            if (!db) {
-                showToast("エラー", "データベースに接続されていません。", true);
-                return;
-            }
 
-            const authorInput = document.getElementById('author-input').value.trim();
-            const titleInput = document.getElementById('title-input').value.trim();
-            const contentInput = document.getElementById('content-input').value.trim();
-            const submitBtn = document.getElementById('submit-btn');
+            const id = document.getElementById('note-id').value;
+            const title = document.getElementById('title-input').value.trim();
+            const category = document.getElementById('category-input').value;
+            const content = document.getElementById('content-input').value.trim();
 
-            if (!titleInput || !contentInput) {
-                showToast("入力エラー", "タイトルと本文を入力してください。", true);
-                return;
-            }
+            if (!title || !content) return;
 
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> 投稿中...';
-
-            try {
-                const postsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'posts');
-                await addDoc(postsCollection, {
-                    author: authorInput || '管理人',
-                    title: titleInput,
-                    content: contentInput,
+            if (id) {
+                // Update
+                const index = posts.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    posts[index] = {
+                        ...posts[index],
+                        title,
+                        category,
+                        content,
+                        updatedAt: Date.now()
+                    };
+                }
+                showToast("更新完了", "記録を更新しました。");
+            } else {
+                // Create
+                const newNote = {
+                    id: Date.now().toString(),
+                    title,
+                    category,
+                    content,
                     createdAt: Date.now(),
-                    userId: userId
-                });
-
-                closeModal();
-                showToast("投稿完了", "記事をリアルタイムで投稿しました！");
-            } catch (error) {
-                console.error("Error adding post:", error);
-                showToast("投稿失敗", "記事の投稿中にエラーが発生しました。", true);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>投稿する</span>';
+                    updatedAt: Date.now()
+                };
+                posts.unshift(newNote);
+                showToast("保存完了", "新しい記録をローカルに保存しました。");
             }
-        };
 
-        // Delete Post
-        window.deletePost = async function(postId) {
-            if (!db) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId);
-                await deleteDoc(docRef);
-                showToast("削除完了", "記事を削除しました。");
-            } catch (error) {
-                console.error("Error deleting post:", error);
-                showToast("削除失敗", "記事の削除中にエラーが発生しました。", true);
+            savePostsToStorage();
+            closeFormModal();
+            renderPosts();
+        }
+
+        // Delete Confirmation Modal
+        function confirmDelete(id) {
+            deleteTargetId = id;
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('confirm-delete-btn').onclick = () => {
+                executeDelete();
+            };
+        }
+
+        function closeConfirmModal() {
+            deleteTargetId = null;
+            document.getElementById('confirm-modal').classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function executeDelete() {
+            if (!deleteTargetId) return;
+            posts = posts.filter(p => p.id !== deleteTargetId);
+            savePostsToStorage();
+            closeConfirmModal();
+            renderPosts();
+            showToast("削除完了", "記録を削除しました。");
+        }
+
+        // Backup Menu & JSON Import/Export
+        function toggleBackupMenu() {
+            const menu = document.getElementById('backup-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicked outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('backup-menu');
+            const button = e.target.closest('button');
+            if (!menu.classList.contains('hidden') && (!button || !button.getAttribute('onclick')?.includes('toggleBackupMenu'))) {
+                menu.classList.add('hidden');
             }
-        };
-
-        // Search Input Event Listener
-        document.getElementById('search-input').addEventListener('input', () => {
-            renderPosts(allPosts);
         });
 
-        // Helper for XSS prevention
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(posts, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0,10);
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `personal_notebook_backup_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("エクスポート完了", "JSONファイルとしてバックアップを保存しました。");
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedPosts = JSON.parse(e.target.result);
+                    if (Array.isArray(importedPosts)) {
+                        posts = importedPosts;
+                        savePostsToStorage();
+                        renderPosts();
+                        showToast("復元完了", "データを正常に読み込みました。");
+                    } else {
+                        showToast("エラー", "無効なJSONファイル形式です。", true);
+                    }
+                } catch(err) {
+                    showToast("エラー", "ファイルの読み込みに失敗しました。", true);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input
+        }
+
+        // Toast Helpers
+        function showToast(title, message, isError = false) {
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-message').innerText = message;
+            
+            const iconEl = document.getElementById('toast-icon');
+            if (isError) {
+                iconEl.className = "w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-3 text-xl";
+                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else {
+                iconEl.className = "w-12 h-12 rounded-full bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center mx-auto mb-3 text-xl";
+                iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+
+            const toast = document.getElementById('toast-modal');
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function closeToast() {
+            document.getElementById('toast-modal').classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        // Utilities
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/&/g, "&amp;")
                       .replace(/</g, "&lt;")
                       .replace(/>/g, "&gt;")
                       .replace(/"/g, "&quot;")
-                      .replace(/#/g, "&#039;");
+                      .replace(/'/g, "&#039;");
         }
     </script>
 </body>
