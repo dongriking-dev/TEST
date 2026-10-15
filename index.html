@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プライベートログ - Personal Notebook</title>
+    <title>ページ更新・閲覧カウンター - Visit Tracker</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,230 +25,207 @@
         }
     </script>
     <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .fade-in { animation: fadeIn 0.25s ease-out forwards; }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse-once { animation: pulseOnce 0.6s cubic-bezier(0.4, 0, 0.6, 1); }
+        @keyframes pulseOnce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex flex-col antialiased transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col antialiased transition-colors duration-200">
 
     <!-- Header -->
     <header class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-xs">
-        <div class="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between">
+        <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="bg-gradient-to-tr from-sky-500 to-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm">
-                    <i class="fa-solid fa-journal-whills"></i>
+                <div class="bg-gradient-to-tr from-sky-500 to-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-lg shadow-sm">
+                    <i class="fa-solid fa-arrows-rotate"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg text-slate-900 dark:text-white leading-tight">パーソナルログ</h1>
+                    <h1 class="font-bold text-lg text-slate-900 dark:text-white leading-tight">ページ更新カウンター</h1>
                     <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        <i class="fa-solid fa-lock text-emerald-500 text-[10px]"></i> 完全ローカル保存
+                        <i class="fa-solid fa-hard-drive text-emerald-500 text-[10px]"></i> LocalStorage 自動追跡
                     </p>
                 </div>
             </div>
 
-            <!-- Controls (Theme, Backup, New Post) -->
+            <!-- Header Action Controls -->
             <div class="flex items-center space-x-2">
-                <!-- Theme Toggle Button -->
+                <!-- Theme Toggle -->
                 <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition" title="ダークモード切替">
                     <i id="theme-icon" class="fa-solid fa-moon"></i>
                 </button>
 
-                <!-- Data Backup Dropdown Trigger -->
-                <div class="relative inline-block text-left">
-                    <button onclick="toggleBackupMenu()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition" title="バックアップ・データ管理">
-                        <i class="fa-solid fa-database"></i>
-                    </button>
-                    <!-- Backup Dropdown Menu -->
-                    <div id="backup-menu" class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50 fade-in">
-                        <button onclick="exportData()" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center space-x-2">
-                            <i class="fa-solid fa-download text-sky-500 w-4"></i>
-                            <span>JSON書き出し (バックアップ)</span>
-                        </button>
-                        <button onclick="document.getElementById('import-file-input').click()" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center space-x-2">
-                            <i class="fa-solid fa-upload text-emerald-500 w-4"></i>
-                            <span>JSON読み込み (復元)</span>
-                        </button>
-                        <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="importData(event)">
-                    </div>
-                </div>
-
-                <!-- New Post Button -->
-                <button onclick="openFormModal()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition active:scale-95 flex items-center space-x-2">
-                    <i class="fa-solid fa-plus"></i>
-                    <span class="hidden sm:inline">新規記録</span>
+                <!-- Reload Button -->
+                <button onclick="location.reload()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition active:scale-95 flex items-center space-x-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span class="hidden sm:inline">再読み込み (更新)</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-6">
-        <!-- Search, Filter & Stats Bar -->
-        <div class="mb-6 space-y-3">
-            <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
-                <!-- Search Input -->
-                <div class="relative w-full sm:w-80">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                        <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                    </span>
-                    <input type="text" id="search-input" placeholder="タイトルや本文で検索..." oninput="filterPosts()" class="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800 dark:text-slate-100 shadow-2xs transition">
-                </div>
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8 space-y-6">
 
-                <!-- Post Stats Counter -->
-                <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center space-x-2 self-end sm:self-center">
-                    <span class="px-3 py-1 bg-slate-200/60 dark:bg-slate-800 rounded-full font-medium">
-                        全 <span id="total-count" class="text-sky-600 dark:text-sky-400 font-bold">0</span> 件の記録
-                    </span>
-                </div>
+        <!-- Counter Hero Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-700 shadow-xl text-center relative overflow-hidden">
+            <div class="absolute -right-12 -top-12 w-40 h-40 bg-sky-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-12 -bottom-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <p class="text-xs font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 累計ページ更新・閲覧回数
+            </p>
+
+            <div class="my-4">
+                <span id="counter-display" class="text-6xl sm:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight inline-block transition-transform duration-200">
+                    0
+                </span>
+                <span class="text-xl sm:text-2xl font-bold text-slate-400 dark:text-slate-500 ml-2">回</span>
             </div>
 
-            <!-- Category Filter Buttons -->
-            <div id="category-filter-list" class="flex flex-wrap gap-2 pt-1">
-                <!-- Dynamic categories populated via JS -->
+            <p id="last-visit-time" class="text-xs text-slate-500 dark:text-slate-400 mb-6">
+                <!-- Timestamp populated by JS -->
+            </p>
+
+            <!-- Hero Action Buttons -->
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <button onclick="openNoteModalForLatest()" class="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition active:scale-95 shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-sky-400 dark:text-sky-600"></i>
+                    <span>今回の訪問にメモを残す</span>
+                </button>
+                <button onclick="confirmReset()" class="bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition border border-rose-200 dark:border-rose-800/50 flex items-center gap-2">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>カウントをリセット</span>
+                </button>
             </div>
         </div>
 
-        <!-- Post Cards List Container -->
-        <div id="posts-container" class="space-y-4">
-            <!-- Rendered Dynamically -->
-        </div>
-
-        <!-- Empty State -->
-        <div id="empty-state" class="hidden text-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-2xs">
-            <div class="w-16 h-16 bg-sky-50 dark:bg-slate-700 text-sky-500 dark:text-sky-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
-                <i class="fa-solid fa-pen-nib"></i>
+        <!-- Visit Log & History Section -->
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-700 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-sky-500"></i> 閲覧・更新履歴ログ
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ページを読み込んだ日時とメモの記録一覧</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span id="log-count" class="text-xs px-3 py-1 bg-slate-100 dark:bg-slate-700/80 rounded-full text-slate-600 dark:text-slate-300 font-medium">
+                        全 0 件
+                    </span>
+                    <button onclick="exportHistoryJSON()" class="p-2 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-xl transition" title="JSON形式で保存">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                </div>
             </div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">記録が見つかりません</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">まだノートが作成されていないか、検索条件に一致するアイテムがありません。</p>
-            <button onclick="openFormModal()" class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition shadow-sm">
-                新しい記録を追加する
-            </button>
+
+            <!-- History Table / List -->
+            <div id="history-container" class="space-y-3">
+                <!-- Log Cards dynamically generated here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden text-center py-12">
+                <i class="fa-solid fa-ghost text-4xl text-slate-300 dark:text-slate-600 mb-3 block"></i>
+                <p class="text-sm text-slate-500 dark:text-slate-400">履歴データはありません。</p>
+            </div>
         </div>
     </main>
 
     <!-- Footer -->
     <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-4 text-center text-xs text-slate-400">
-        Personal Notebook & Log &bull; LocalStorage Active
+        Page View Counter App &bull; LocalStorage Enabled
     </footer>
 
-    <!-- Create/Edit Form Modal -->
-    <div id="form-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
-        <div id="form-modal-content" class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-200">
+    <!-- Note Modal -->
+    <div id="note-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div id="note-modal-content" class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-200">
             <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-700/60 pb-3">
-                <h3 id="modal-heading" class="font-bold text-lg text-slate-900 dark:text-white flex items-center">
-                    <i class="fa-solid fa-pen-to-square text-sky-500 mr-2"></i> 新規記録の作成
+                <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-sky-500"></i> <span id="modal-title">訪問ログにメモを追加</span>
                 </h3>
-                <button onclick="closeFormModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                <button onclick="closeNoteModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <form id="note-form" onsubmit="saveNote(event)" class="space-y-4">
-                <input type="hidden" id="note-id">
-                
+            <form onsubmit="saveNote(event)" class="space-y-4">
+                <input type="hidden" id="target-visit-id">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">タイトル</label>
-                    <input type="text" id="title-input" required placeholder="タイトルを入力..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">メモ内容</label>
+                    <textarea id="note-text-input" rows="4" placeholder="例: 「新機能のテスト」「午前中の動作確認」など..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition resize-none"></textarea>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">カテゴリ</label>
-                    <select id="category-input" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
-                        <option value="メモ">📝 メモ</option>
-                        <option value="日記">📖 日記</option>
-                        <option value="開発ログ">💻 開発ログ</option>
-                        <option value="アイデア">💡 アイデア</option>
-                        <option value="タスク">✅ タスク</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">本文</label>
-                    <textarea id="content-input" required rows="6" placeholder="詳細を入力してください... (改行は自動保持されます)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition resize-none leading-relaxed"></textarea>
-                </div>
-
-                <div class="flex items-center justify-end space-x-3 pt-2">
-                    <button type="button" onclick="closeFormModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeNoteModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
                         キャンセル
                     </button>
-                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center space-x-2">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        <span>保存する</span>
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm transition">
+                        保存する
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Notification / Toast Alert Modal -->
-    <div id="toast-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <!-- Confirm Reset Modal -->
+    <div id="reset-confirm-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6 text-center border border-slate-200 dark:border-slate-700">
-            <div id="toast-icon" class="w-12 h-12 rounded-full bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center mx-auto mb-3 text-xl">
+            <div class="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h4 class="font-bold text-slate-900 dark:text-white text-base mb-1">カウントをリセットしますか？</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-5">これまでの全閲覧回数および訪問履歴ログが消去されます。</p>
+            <div class="flex space-x-3">
+                <button onclick="closeResetModal()" class="w-1/2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-2.5 rounded-xl text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                    キャンセル
+                </button>
+                <button onclick="executeReset()" class="w-1/2 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-xs font-medium transition shadow-sm">
+                    リセットする
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Modal -->
+    <div id="toast-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-xs w-full p-5 text-center border border-slate-200 dark:border-slate-700">
+            <div id="toast-icon" class="w-10 h-10 rounded-full bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center mx-auto mb-2 text-lg">
                 <i class="fa-solid fa-check"></i>
             </div>
-            <h4 id="toast-title" class="font-bold text-slate-900 dark:text-white text-base mb-1">お知らせ</h4>
-            <p id="toast-message" class="text-sm text-slate-500 dark:text-slate-400 mb-5">処理が完了しました。</p>
-            <button onclick="closeToast()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-2.5 rounded-xl text-sm font-medium transition shadow-sm">
+            <h4 id="toast-title" class="font-bold text-slate-900 dark:text-white text-sm mb-1">完了</h4>
+            <p id="toast-message" class="text-xs text-slate-500 dark:text-slate-400 mb-4">更新されました。</p>
+            <button onclick="closeToast()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-2 rounded-xl text-xs font-medium transition">
                 OK
             </button>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="confirm-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6 text-center border border-slate-200 dark:border-slate-700">
-            <div class="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-3 text-xl">
-                <i class="fa-solid fa-trash-can"></i>
-            </div>
-            <h4 class="font-bold text-slate-900 dark:text-white text-base mb-1">記録を削除しますか？</h4>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">この操作は取り消せません。</p>
-            <div class="flex space-x-3">
-                <button onclick="closeConfirmModal()" class="w-1/2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition">
-                    キャンセル
-                </button>
-                <button id="confirm-delete-btn" class="w-1/2 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-sm font-medium transition shadow-sm">
-                    削除する
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Application Script -->
     <script>
-        const STORAGE_KEY = 'personal_notebook_entries_v1';
-        const THEME_KEY = 'personal_notebook_theme';
-        const CATEGORIES = ['すべて', 'メモ', '日記', '開発ログ', 'アイデア', 'タスク'];
+        const STORAGE_KEY = 'page_view_counter_history_v1';
+        const THEME_KEY = 'page_view_counter_theme';
 
-        let posts = [];
-        let selectedCategory = 'すべて';
-        let deleteTargetId = null;
+        let historyLogs = [];
 
-        // Color badge dictionary for categories
-        const categoryColors = {
-            'メモ': 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
-            '日記': 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
-            '開発ログ': 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
-            'アイデア': 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
-            'タスク': 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
-        };
-
-        // On Document Load
         window.onload = function() {
             initTheme();
-            loadPostsFromStorage();
-            renderCategoryFilters();
-            renderPosts();
+            recordCurrentVisit();
+            renderLogs();
         };
 
-        // Theme Initialization & Toggle
+        // Theme Setup
         function initTheme() {
             const savedTheme = localStorage.getItem(THEME_KEY);
             if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -266,79 +243,76 @@
             document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
-        // Load Posts from LocalStorage
-        function loadPostsFromStorage() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
+        // Record Current Visit on Page Load
+        function recordCurrentVisit() {
+            const rawData = localStorage.getItem(STORAGE_KEY);
+            if (rawData) {
                 try {
-                    posts = JSON.parse(saved);
+                    historyLogs = JSON.parse(rawData);
                 } catch(e) {
-                    posts = [];
+                    historyLogs = [];
                 }
-            } else {
-                // Pre-populate with a welcome sample entry if first time
-                posts = [{
-                    id: Date.now().toString(),
-                    title: 'ようこそ！パーソナルログへ',
-                    category: 'メモ',
-                    content: 'このアプリケーションは外部データベースを使わず、すべてお使いのブラウザ（LocalStorage）に保存されます。\n\n・右上の「新規記録」ボタンからアイテムを追加できます。\n・右上のデータベースアイコンからデータのエクスポート（バックアップ）やインポートが可能です。\n・タイトルや本文、カテゴリで瞬時に検索・絞り込みができます。',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                }];
-                savePostsToStorage();
             }
-        }
 
-        // Save Posts to LocalStorage
-        function savePostsToStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
-        }
+            const now = Date.now();
+            const newCount = historyLogs.length + 1;
 
-        // Render Category Filter Buttons
-        function renderCategoryFilters() {
-            const filterContainer = document.getElementById('category-filter-list');
-            filterContainer.innerHTML = '';
+            const newEntry = {
+                id: 'visit_' + now,
+                countIndex: newCount,
+                timestamp: now,
+                note: ''
+            };
 
-            CATEGORIES.forEach(cat => {
-                const btn = document.createElement('button');
-                const isSelected = cat === selectedCategory;
-                btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer ${
-                    isSelected 
-                        ? 'bg-sky-600 text-white shadow-xs' 
-                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
-                }`;
-                btn.innerText = cat;
-                btn.onclick = () => {
-                    selectedCategory = cat;
-                    renderCategoryFilters();
-                    renderPosts();
-                };
-                filterContainer.appendChild(btn);
+            historyLogs.unshift(newEntry); // Add to beginning
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(historyLogs));
+
+            // Animate Counter
+            animateCounter(newCount);
+
+            // Last visit timestamp format
+            const formattedDate = new Date(now).toLocaleString('ja-JP', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
             });
+            document.getElementById('last-visit-time').innerText = `最終アクセス日時: ${formattedDate}`;
         }
 
-        // Render Posts
-        function renderPosts() {
-            const container = document.getElementById('posts-container');
+        // Count Number Animation
+        function animateCounter(targetNumber) {
+            const displayEl = document.getElementById('counter-display');
+            let start = 0;
+            const duration = 600;
+            const stepTime = Math.max(Math.floor(duration / Math.max(targetNumber, 1)), 10);
+
+            displayEl.classList.add('pulse-once');
+
+            if (targetNumber > 50) {
+                displayEl.innerText = targetNumber;
+                return;
+            }
+
+            const timer = setInterval(() => {
+                start += 1;
+                displayEl.innerText = start;
+                if (start >= targetNumber) {
+                    clearInterval(timer);
+                    displayEl.innerText = targetNumber;
+                }
+            }, stepTime);
+        }
+
+        // Render Visit Log Cards
+        function renderLogs() {
+            const container = document.getElementById('history-container');
             const emptyState = document.getElementById('empty-state');
-            const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+            document.getElementById('log-count').innerText = `全 ${historyLogs.length} 件`;
 
-            // Filter logic
-            let filtered = posts.filter(post => {
-                const matchesCategory = (selectedCategory === 'すべて' || post.category === selectedCategory);
-                const matchesSearch = post.title.toLowerCase().includes(searchQuery) || 
-                                      post.content.toLowerCase().includes(searchQuery);
-                return matchesCategory && matchesSearch;
-            });
-
-            // Sort descending by timestamp
-            filtered.sort((a, b) => b.createdAt - a.createdAt);
-
-            document.getElementById('total-count').innerText = filtered.length;
-
-            if (filtered.length === 0) {
+            if (historyLogs.length === 0) {
                 container.innerHTML = '';
                 emptyState.classList.remove('hidden');
+                document.getElementById('counter-display').innerText = '0';
+                document.getElementById('last-visit-time').innerText = 'まだ訪問記録はありません。';
                 return;
             } else {
                 emptyState.classList.add('hidden');
@@ -346,222 +320,130 @@
 
             container.innerHTML = '';
 
-            filtered.forEach(post => {
+            historyLogs.forEach((item, index) => {
                 const card = document.createElement('div');
-                card.className = "fade-in bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs hover:shadow-md transition duration-200 flex flex-col justify-between";
+                card.className = "fade-in bg-slate-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-sky-300 dark:hover:border-sky-600 transition";
 
-                const createdDate = new Date(post.createdAt).toLocaleString('ja-JP', {
-                    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+                const dateStr = new Date(item.timestamp).toLocaleString('ja-JP', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
                 });
 
-                const isEdited = post.updatedAt && post.updatedAt !== post.createdAt;
-                const categoryClass = categoryColors[post.category] || 'bg-slate-100 text-slate-700';
+                const isLatest = index === 0;
 
                 card.innerHTML = `
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center space-x-2">
-                                <span class="px-2.5 py-1 rounded-lg text-xs font-medium ${categoryClass}">
-                                    ${escapeHtml(post.category)}
-                                </span>
-                                <span class="text-xs text-slate-400 dark:text-slate-500">
-                                    <i class="fa-regular fa-clock mr-1"></i>${createdDate} ${isEdited ? '(編集済み)' : ''}
-                                </span>
-                            </div>
-                            <!-- Action Buttons -->
-                            <div class="flex items-center space-x-1">
-                                <button onclick="openEditModal('${post.id}')" class="p-1.5 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition" title="編集">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <button onclick="confirmDelete('${post.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition" title="削除">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="${isLatest ? 'bg-sky-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'} px-3 py-1.5 rounded-xl font-bold text-xs shrink-0 mt-0.5">
+                            #${item.countIndex} ${isLatest ? '<span class="ml-1 text-[10px] font-normal opacity-90">(今回)</span>' : ''}
                         </div>
-                        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">${escapeHtml(post.title)}</h3>
-                        <p class="text-slate-600 dark:text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(post.content)}</p>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                <i class="fa-regular fa-clock text-slate-400"></i> ${dateStr}
+                            </div>
+                            ${item.note ? `
+                                <div class="mt-2 text-xs text-sky-800 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 px-3 py-1.5 rounded-lg border border-sky-100 dark:border-sky-900/60 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-comment text-sky-500"></i> ${escapeHtml(item.note)}
+                                </div>
+                            ` : `
+                                <div class="mt-1 text-xs text-slate-400 italic">メモなし</div>
+                            `}
+                        </div>
+                    </div>
+                    <div class="self-end sm:self-center">
+                        <button onclick="openNoteModal('${item.id}')" class="px-3 py-1.5 text-xs bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-slate-600 dark:text-slate-300 transition flex items-center gap-1">
+                            <i class="fa-solid fa-pencil text-slate-400"></i>
+                            <span>${item.note ? 'メモ編集' : 'メモ追加'}</span>
+                        </button>
                     </div>
                 `;
+
                 container.appendChild(card);
             });
         }
 
-        // Search trigger
-        function filterPosts() {
-            renderPosts();
-        }
+        // Open Note Modal for Specific Visit
+        function openNoteModal(id) {
+            const target = historyLogs.find(h => h.id === id);
+            if (!target) return;
 
-        // Form Modal Operations
-        function openFormModal() {
-            document.getElementById('note-id').value = '';
-            document.getElementById('note-form').reset();
-            document.getElementById('modal-heading').innerHTML = '<i class="fa-solid fa-pen-to-square text-sky-500 mr-2"></i> 新規記録の作成';
-            
-            const modal = document.getElementById('form-modal');
-            const content = document.getElementById('form-modal-content');
+            document.getElementById('target-visit-id').value = target.id;
+            document.getElementById('note-text-input').value = target.note || '';
+            document.getElementById('modal-title').innerText = `#${target.countIndex} 回目の訪問にメモを追加`;
+
+            const modal = document.getElementById('note-modal');
+            const content = document.getElementById('note-modal-content');
             modal.classList.remove('opacity-0', 'pointer-events-none');
             content.classList.remove('scale-95');
             content.classList.add('scale-100');
         }
 
-        function openEditModal(id) {
-            const post = posts.find(p => p.id === id);
-            if (!post) return;
-
-            document.getElementById('note-id').value = post.id;
-            document.getElementById('title-input').value = post.title;
-            document.getElementById('category-input').value = post.category;
-            document.getElementById('content-input').value = post.content;
-
-            document.getElementById('modal-heading').innerHTML = '<i class="fa-solid fa-pen-to-square text-sky-500 mr-2"></i> 記録の編集';
-
-            const modal = document.getElementById('form-modal');
-            const content = document.getElementById('form-modal-content');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            content.classList.remove('scale-95');
-            content.classList.add('scale-100');
+        function openNoteModalForLatest() {
+            if (historyLogs.length > 0) {
+                openNoteModal(historyLogs[0].id);
+            }
         }
 
-        function closeFormModal() {
-            const modal = document.getElementById('form-modal');
-            const content = document.getElementById('form-modal-content');
+        function closeNoteModal() {
+            const modal = document.getElementById('note-modal');
+            const content = document.getElementById('note-modal-content');
             modal.classList.add('opacity-0', 'pointer-events-none');
             content.classList.remove('scale-100');
             content.classList.add('scale-95');
         }
 
-        // Save/Update Note
-        function saveNote(event) {
-            event.preventDefault();
+        function saveNote(e) {
+            e.preventDefault();
+            const id = document.getElementById('target-visit-id').value;
+            const text = document.getElementById('note-text-input').value.trim();
 
-            const id = document.getElementById('note-id').value;
-            const title = document.getElementById('title-input').value.trim();
-            const category = document.getElementById('category-input').value;
-            const content = document.getElementById('content-input').value.trim();
-
-            if (!title || !content) return;
-
-            if (id) {
-                // Update
-                const index = posts.findIndex(p => p.id === id);
-                if (index !== -1) {
-                    posts[index] = {
-                        ...posts[index],
-                        title,
-                        category,
-                        content,
-                        updatedAt: Date.now()
-                    };
-                }
-                showToast("更新完了", "記録を更新しました。");
-            } else {
-                // Create
-                const newNote = {
-                    id: Date.now().toString(),
-                    title,
-                    category,
-                    content,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                };
-                posts.unshift(newNote);
-                showToast("保存完了", "新しい記録をローカルに保存しました。");
+            const idx = historyLogs.findIndex(h => h.id === id);
+            if (idx !== -1) {
+                historyLogs[idx].note = text;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(historyLogs));
+                renderLogs();
+                closeNoteModal();
+                showToast("保存完了", "メモを書き込みました。");
             }
-
-            savePostsToStorage();
-            closeFormModal();
-            renderPosts();
         }
 
-        // Delete Confirmation Modal
-        function confirmDelete(id) {
-            deleteTargetId = id;
-            const modal = document.getElementById('confirm-modal');
+        // Reset Counter Flow
+        function confirmReset() {
+            const modal = document.getElementById('reset-confirm-modal');
             modal.classList.remove('opacity-0', 'pointer-events-none');
-            document.getElementById('confirm-delete-btn').onclick = () => {
-                executeDelete();
-            };
         }
 
-        function closeConfirmModal() {
-            deleteTargetId = null;
-            document.getElementById('confirm-modal').classList.add('opacity-0', 'pointer-events-none');
+        function closeResetModal() {
+            document.getElementById('reset-confirm-modal').classList.add('opacity-0', 'pointer-events-none');
         }
 
-        function executeDelete() {
-            if (!deleteTargetId) return;
-            posts = posts.filter(p => p.id !== deleteTargetId);
-            savePostsToStorage();
-            closeConfirmModal();
-            renderPosts();
-            showToast("削除完了", "記録を削除しました。");
+        function executeReset() {
+            historyLogs = [];
+            localStorage.removeItem(STORAGE_KEY);
+            closeResetModal();
+            renderLogs();
+            showToast("リセット完了", "カウンターと履歴ログをリセットしました。");
         }
 
-        // Backup Menu & JSON Import/Export
-        function toggleBackupMenu() {
-            const menu = document.getElementById('backup-menu');
-            menu.classList.toggle('hidden');
-        }
-
-        // Close dropdown when clicked outside
-        document.addEventListener('click', (e) => {
-            const menu = document.getElementById('backup-menu');
-            const button = e.target.closest('button');
-            if (!menu.classList.contains('hidden') && (!button || !button.getAttribute('onclick')?.includes('toggleBackupMenu'))) {
-                menu.classList.add('hidden');
+        // Export JSON History
+        function exportHistoryJSON() {
+            if (historyLogs.length === 0) {
+                showToast("お知らせ", "エクスポートするデータがありません。");
+                return;
             }
-        });
-
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(posts, null, 2));
-            const downloadAnchor = document.createElement('a');
-            const dateStr = new Date().toISOString().slice(0,10);
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `personal_notebook_backup_${dateStr}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-            showToast("エクスポート完了", "JSONファイルとしてバックアップを保存しました。");
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(historyLogs, null, 2));
+            const anchor = document.createElement('a');
+            anchor.setAttribute("href", dataStr);
+            anchor.setAttribute("download", `visit_counter_history_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            showToast("書き出し完了", "履歴データのJSONファイルを保存しました。");
         }
 
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedPosts = JSON.parse(e.target.result);
-                    if (Array.isArray(importedPosts)) {
-                        posts = importedPosts;
-                        savePostsToStorage();
-                        renderPosts();
-                        showToast("復元完了", "データを正常に読み込みました。");
-                    } else {
-                        showToast("エラー", "無効なJSONファイル形式です。", true);
-                    }
-                } catch(err) {
-                    showToast("エラー", "ファイルの読み込みに失敗しました。", true);
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; // Reset input
-        }
-
-        // Toast Helpers
-        function showToast(title, message, isError = false) {
+        // Toast Helper
+        function showToast(title, msg) {
             document.getElementById('toast-title').innerText = title;
-            document.getElementById('toast-message').innerText = message;
-            
-            const iconEl = document.getElementById('toast-icon');
-            if (isError) {
-                iconEl.className = "w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-3 text-xl";
-                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
-            } else {
-                iconEl.className = "w-12 h-12 rounded-full bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center mx-auto mb-3 text-xl";
-                iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
-            }
-
+            document.getElementById('toast-message').innerText = msg;
             const toast = document.getElementById('toast-modal');
             toast.classList.remove('opacity-0', 'pointer-events-none');
         }
@@ -570,14 +452,9 @@
             document.getElementById('toast-modal').classList.add('opacity-0', 'pointer-events-none');
         }
 
-        // Utilities
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/&/g, "&amp;")
-                      .replace(/</g, "&lt;")
-                      .replace(/>/g, "&gt;")
-                      .replace(/"/g, "&quot;")
-                      .replace(/'/g, "&#039;");
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
     </script>
 </body>
