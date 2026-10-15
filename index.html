@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リアルタイムお知らせ・ブログ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col antialiased">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-900 leading-tight">コミュニティ・ボード</h1>
+                    <p class="text-xs text-slate-500">リアルタイムでお知らせを共有</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span id="connection-status" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 transition-all duration-300">
+                    <span class="w-2 h-2 mr-1.5 bg-amber-500 rounded-full animate-pulse"></span> 接続中...
+                </span>
+                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-sm transition transform active:scale-95 flex items-center space-x-2">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>新規投稿</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+        <!-- Search & Filter bar -->
+        <div class="mb-6 flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div class="relative w-full sm:w-72">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <i class="fa-solid fa-search text-sm"></i>
+                </span>
+                <input type="text" id="search-input" placeholder="記事を検索..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-2xs">
+            </div>
+            <div class="text-xs text-slate-500 flex items-center self-end sm:self-center">
+                <i class="fa-solid fa-circle-info mr-1.5 text-indigo-500"></i>変更は自動で全ユーザーに反映されます
+            </div>
+        </div>
+
+        <!-- Post List Container -->
+        <div id="posts-container" class="space-y-4">
+            <!-- Loading Skeleton State -->
+            <div id="loading-skeleton" class="space-y-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 animate-pulse shadow-2xs">
+                    <div class="h-5 bg-slate-200 rounded w-1/3 mb-4"></div>
+                    <div class="space-y-2">
+                        <div class="h-4 bg-slate-100 rounded w-full"></div>
+                        <div class="h-4 bg-slate-100 rounded w-4/5"></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 animate-pulse shadow-2xs">
+                    <div class="h-5 bg-slate-200 rounded w-1/4 mb-4"></div>
+                    <div class="space-y-2">
+                        <div class="h-4 bg-slate-100 rounded w-full"></div>
+                        <div class="h-4 bg-slate-100 rounded w-2/3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State (Hidden by default) -->
+            <div id="empty-state" class="hidden text-center py-16 bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs">
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-900">記事がまだありません</h3>
+                <p class="text-sm text-slate-500 mt-1 mb-6">最初の投稿を作成して、リアルタイム共有を試してみましょう！</p>
+                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-sm transition">
+                    今すぐ投稿する
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+        &copy; 2026 リアルタイムお知らせサイト. All rights reserved.
+    </footer>
+
+    <!-- Post Modal / Form -->
+    <div id="post-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 transform scale-95 transition-transform duration-300 border border-slate-100">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-bold text-lg text-slate-900 flex items-center">
+                    <i class="fa-solid fa-pen-nib text-indigo-600 mr-2"></i> 新規記事の作成
+                </h3>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <form id="post-form" onsubmit="handlePostSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">お名前 / ニックネーム</label>
+                    <input type="text" id="author-input" required placeholder="例: 管理人" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">タイトル</label>
+                    <input type="text" id="title-input" required placeholder="例: サイトをリニューアルしました！" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">本文</label>
+                    <textarea id="content-input" required rows="5" placeholder="お知らせの詳細やブログの内容を入力してください..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition resize-none"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
+                        キャンセル
+                    </button>
+                    <button type="submit" id="submit-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center space-x-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>投稿する</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Notification / Message Box Modal -->
+    <div id="message-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+            <div id="msg-icon" class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h4 id="msg-title" class="font-bold text-slate-900 text-base mb-1">通知</h4>
+            <p id="msg-text" class="text-sm text-slate-500 mb-5">メッセージ内容</p>
+            <button onclick="closeMessageModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-medium transition">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase Script Loader & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration & Initialization
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'realtime-blog-app-default';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        let app, db, auth, userId = null;
+        let allPosts = [];
+
+        // Custom UI Modal Helper (No alert/confirm)
+        window.showToast = function(title, text, isError = false) {
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-text').innerText = text;
+            const iconEl = document.getElementById('msg-icon');
+            if (isError) {
+                iconEl.className = "w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3 text-xl";
+                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else {
+                iconEl.className = "w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3 text-xl";
+                iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+            const modal = document.getElementById('message-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+        };
+
+        window.closeMessageModal = function() {
+            document.getElementById('message-modal').classList.add('opacity-0', 'pointer-events-none');
+        };
+
+        // Modal Controls
+        window.openModal = function() {
+            const modal = document.getElementById('post-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+            document.getElementById('title-input').focus();
+        };
+
+        window.closeModal = function() {
+            const modal = document.getElementById('post-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            document.getElementById('post-form').reset();
+        };
+
+        // Initialize Firebase
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+            if (token) {
+                signInWithCustomToken(auth, token).catch(() => signInAnonymously(auth));
+            } else {
+                signInAnonymously(auth);
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    updateConnectionStatus(true);
+                    initFirestoreListener();
+                } else {
+                    userId = null;
+                    updateConnectionStatus(false);
+                }
+            });
+        } catch (e) {
+            console.error("Firebase init error:", e);
+            updateConnectionStatus(false);
+            showToast("接続エラー", "Firebaseの初期化に失敗しました。", true);
+        }
+
+        function updateConnectionStatus(isConnected) {
+            const badge = document.getElementById('connection-status');
+            if (isConnected) {
+                badge.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 transition-all duration-300";
+                badge.innerHTML = '<span class="w-2 h-2 mr-1.5 bg-emerald-500 rounded-full"></span> リアルタイム接続中';
+            } else {
+                badge.className = "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-800 transition-all duration-300";
+                badge.innerHTML = '<span class="w-2 h-2 mr-1.5 bg-rose-500 rounded-full"></span> オフライン';
+            }
+        }
+
+        // Firestore Real-time Listener (Rule 1 & Rule 3 compliant)
+        function initFirestoreListener() {
+            if (!db) return;
+            const postsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'posts');
+            
+            onSnapshot(query(postsCollection), (snapshot) => {
+                allPosts = [];
+                snapshot.forEach((docSnap) => {
+                    allPosts.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                // Sort client-side by timestamp descending (newest first)
+                allPosts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                
+                renderPosts(allPosts);
+            }, (error) => {
+                console.error("Firestore snapshot error:", error);
+                showToast("同期エラー", "データの取得中にエラーが発生しました。", true);
+            });
+        }
+
+        // Render Posts to DOM
+        function renderPosts(postsToRender) {
+            const container = document.getElementById('posts-container');
+            const skeleton = document.getElementById('loading-skeleton');
+            const emptyState = document.getElementById('empty-state');
+
+            if (skeleton) skeleton.remove();
+
+            // Filter if search query exists
+            const searchQuery = document.getElementById('search-input').value.toLowerCase();
+            const filtered = postsToRender.filter(p => 
+                (p.title && p.title.toLowerCase().includes(searchQuery)) || 
+                (p.content && p.content.toLowerCase().includes(searchQuery)) ||
+                (p.author && p.author.toLowerCase().includes(searchQuery))
+            );
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                // Keep the empty state element, clear other post cards
+                const existingCards = container.querySelectorAll('.post-card');
+                existingCards.forEach(c => c.remove());
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Remove previous rendered cards
+            const existingCards = container.querySelectorAll('.post-card');
+            existingCards.forEach(c => c.remove());
+
+            filtered.forEach(post => {
+                const card = document.createElement('div');
+                card.className = "post-card bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition duration-200 flex flex-col justify-between";
+                
+                const dateStr = post.createdAt ? new Date(post.createdAt).toLocaleString('ja-JP', {
+                    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+                }) : 'たった今';
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                                    ${escapeHtml(post.author ? post.author.charAt(0) : '名')}
+                                </div>
+                                <div>
+                                    <span class="text-xs font-semibold text-slate-800">${escapeHtml(post.author || '名無しさん')}</span>
+                                    <span class="text-slate-300 mx-1.5">•</span>
+                                    <span class="text-xs text-slate-400">${dateStr}</span>
+                                </div>
+                            </div>
+                            <button onclick="deletePost('${post.id}')" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition text-sm" title="削除">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        <h2 class="text-base font-bold text-slate-900 mb-2">${escapeHtml(post.title)}</h2>
+                        <p class="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(post.content)}</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Handle Form Submission (Create Post)
+        window.handlePostSubmit = async function(event) {
+            event.preventDefault();
+            if (!db) {
+                showToast("エラー", "データベースに接続されていません。", true);
+                return;
+            }
+
+            const authorInput = document.getElementById('author-input').value.trim();
+            const titleInput = document.getElementById('title-input').value.trim();
+            const contentInput = document.getElementById('content-input').value.trim();
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (!titleInput || !contentInput) {
+                showToast("入力エラー", "タイトルと本文を入力してください。", true);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> 投稿中...';
+
+            try {
+                const postsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'posts');
+                await addDoc(postsCollection, {
+                    author: authorInput || '管理人',
+                    title: titleInput,
+                    content: contentInput,
+                    createdAt: Date.now(),
+                    userId: userId
+                });
+
+                closeModal();
+                showToast("投稿完了", "記事をリアルタイムで投稿しました！");
+            } catch (error) {
+                console.error("Error adding post:", error);
+                showToast("投稿失敗", "記事の投稿中にエラーが発生しました。", true);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>投稿する</span>';
+            }
+        };
+
+        // Delete Post
+        window.deletePost = async function(postId) {
+            if (!db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId);
+                await deleteDoc(docRef);
+                showToast("削除完了", "記事を削除しました。");
+            } catch (error) {
+                console.error("Error deleting post:", error);
+                showToast("削除失敗", "記事の削除中にエラーが発生しました。", true);
+            }
+        };
+
+        // Search Input Event Listener
+        document.getElementById('search-input').addEventListener('input', () => {
+            renderPosts(allPosts);
+        });
+
+        // Helper for XSS prevention
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/#/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
